@@ -1,5 +1,5 @@
 from flask import Flask, request, abort
-import gspread
+import os, gspread
 
 from linebot import (
     LineBotApi, WebhookHandler,
@@ -23,8 +23,8 @@ SPREADSHEET_KEY = '1OqyYfjv7cLs4SNd-c3yfD0E2ibvBkvyAviqw6P1CnOU'
 worksheet = gc.open_by_key(SPREADSHEET_KEY).sheet1
 
 # LINEbotの認証
-channel_secret = 'a56414cabfe90cfd05c5ce6e29542050'
-channel_access_token = 'INsYVeVP7Uk2D+M+ZKZsdNdWoeP0oILei21qBE4k7O7kRyLQrdzhUQe2FHLvDEroP3r45B9MFKgDgqaM/zhpO0yDHZNAThPcDjcZsdZHuF7S3VJdBQrbumFZqfddWVWOOC/fA4Nq6AsYl1Z3AwMcOQdB04t89/1O/w1cDnyilFU='
+channel_secret = os.environ["CHANNEL_SECRET"]
+channel_access_token = os.environ["CHANNEL_ACCESS_TOKEN"]
 
 # flaskアプリ実装
 app = Flask(__name__)
