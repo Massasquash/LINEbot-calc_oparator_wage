@@ -60,12 +60,11 @@ def handle_message(event):
     
     if event.message.type == 'text':
         ev_text = event.message.text
-
         if ev_text == '日報入力':
             actions.send_start_datetime_picker(event)
             return
-
         if ev_text == '集計':
+            reply_text(event, 'これから作ります')
         
 #ポストバックアクション応答メソッド
 @handler.add(PostbackEvent)
