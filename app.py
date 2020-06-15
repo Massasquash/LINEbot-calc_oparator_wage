@@ -38,7 +38,6 @@ app = Flask(__name__)
 # flaskのルート設定
 @app.route('/')
 def hello_world():
-    print(cache)
     return 'hello world!'
 
 @app.route('/callback', methods=['POST'])
@@ -64,7 +63,7 @@ def handle_message(event):
             actions.send_start_datetime_picker(event)
             return
         if ev_text == '集計':
-            reply_text(event, 'これから作ります')
+            actions.reply_text(event, 'これから作ります')
         
 #ポストバックアクション応答メソッド
 @handler.add(PostbackEvent)
