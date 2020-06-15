@@ -6,12 +6,12 @@ from linebot.models import (
     TemplateSendMessage, ButtonsTemplate,
     PostbackAction, MessageAction,
     DatetimePickerAction, QuickReply, QuickReplyButton,
-    MessageEvent, TextMessage, TextSendMessage
+    MessageEvent, PostbackEvent,
+    TextMessage, TextSendMessage,
 )
 from linebot.exceptions import InvalidSignatureError
 
-import api_settings
-import tools
+import api_settings, tools, actions
 
 #LINE botの設定
 line_bot_api = LineBotApi(os.environ["LINE_CHANNEL_ACCESS_TOKEN"])
@@ -29,11 +29,16 @@ master_sheet = ss.worksheet('master')
 # マスター情報の取得
 machines, persons = tools.get_master_data()
 
+# TODO:あとで修正
+cache_sheet = ss.worksheet('cache')
+
 # flaskアプリ実装（初期化）
 app = Flask(__name__)
 
+# flaskのルート設定
 @app.route('/')
 def hello_world():
+    print(cache)
     return 'hello world!'
 
 @app.route('/callback', methods=['POST'])
@@ -52,61 +57,67 @@ def callback():
 # メッセージ応答メソッド
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    
     if event.message.type == 'text':
-        text = event.message.text
+        ev_text = event.message.text
 
-        if text == "日報入力":
-            datetime_picker = TemplateSendMessage(
-                alt_text='作業開始時間を入力',
-                template=ButtonsTemplate(
-                    text='開始時間を入れてください',
-                    title='作業日報',
-                    actions=[
-                        DatetimePickerAction(
-                            label='入力',
-                            data='action=setstarttime',
-                            mode='datetime',
-                        )
-                    ]
-                )
-            )
-
-            line_bot_api.reply_message(
-                event.reply_token,
-                datetime_picker
-            )
+        if ev_text == '日報入力':
+            actions.send_start_datetime_picker(event)
             return
+
+        if ev_text == '集計':
         
-        elif text == "リプライ":
-            def make_quickreply_item(obj):
-                item = QuickReplyButton(
-                    action = PostbackAction(label=obj[0], data=f'action=quickreply-data1'))
-                return item
-                
-            quick_reply_message = TextSendMessage(
-                text = '選んでください。',
-                quick_reply = QuickReply(
-                    items = map(make_quickreply_item, machines)
-                )
-            )
+#ポストバックアクション応答メソッド
+@handler.add(PostbackEvent)
+def handle_postback(event):
+    ev_data = event.postback.data
 
-            line_bot_api.reply_message(
-                event.reply_token,
-                quick_reply_message
-            )
+    if ev_data == 'starttime':
+        starttime = event.postback.params['datetime']
+        cache_sheet.update_acell('B2', starttime)
+        # actions.reply_text(event, f'開始時間は{starttime}')
+        actions.send_end_datetime_picker(event)
+        return
+
+    if ev_data == 'endtime':
+        endtime = event.postback.params['datetime']
+        cache_sheet.update_acell('B3', endtime)
+        actions.send_machines_quickreply(event, machines)
+        return
+
+    if ev_data.startswith('machine'):
+        machine = ev_data.split("'")[1]
+        cache_sheet.update_acell('B4', machine)
+        actions.send_persons_quickreply(event, persons)
+        return
+    
+    if ev_data.startswith('person'):
+        person = ev_data.split("'")[1]
+        cache_sheet.update_acell('B5', person)
+        cache = cache_sheet.get('B1:B5')
+        
+        msg = f'''
+        作業開始：{cache[1][0]}\n\
+        作業終了：{cache[2][0]}\n\
+        コンバイン名：{cache[3][0]}\n\
+        作業者名：{cache[4][0]}\n\n\
+        この日報を登録しますか？
+        '''
+
+        actions.send_entry_quickreply(event, msg)
+        return
+
+    if ev_data.startswith('entry'):
+        if ev_data[-1] == '0':
+            cache = cache_sheet.get('B1:B5')
+            record_sheet.append_row([cache[1][0], cache[2][0], cache[3][0], cache[4][0]])
+            msg = '日報を登録しました！'
+            actions.reply_text(event, msg)
             return
-
-
-        # スプレッドシートのA列に新しい行で追加
-        # text = event.message.text
-        # worksheet.append_row([text])
-
-        # msg = f' [{text}]をシートに登録しました'
-        # msg = event.message.text
-        # line_bot_api.reply_message(
-        #     event.reply_token,
-        #     TextSendMessage(text=msg)
-        # )
+        elif ev_data[-1] == '1':
+            msg = 'キャンセルしました。最初から入力してください。'
+            actions.reply_text(event, msg)
+            return
 
 #-----------------
 if __name__ == '__main__':
