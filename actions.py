@@ -59,8 +59,6 @@ def send_end_datetime_picker(event):
     )
     return
 
-
-
 def send_machines_quickreply(event, obj):
     def make_quickreply_item(obj):
         item = QuickReplyButton(
@@ -97,7 +95,6 @@ def send_persons_quickreply(event, obj):
     )
     return
 
-
 def send_entry_quickreply(event, msg):
     items =[
         QuickReplyButton(
@@ -117,7 +114,6 @@ def send_entry_quickreply(event, msg):
         quick_reply_message
     )
     return
-
 
 def send_aggregate_button_template(event, msg1, msg2):
     message_template = TemplateSendMessage(

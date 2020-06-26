@@ -4,10 +4,32 @@ import gspread
 
 def get_master_data():
     machines = app.master_sheet.get('B2:B6')
-    persons = app.master_sheet.get('B9:B18')
-    wages = app.master_sheet.get('B9:C18')
+    persons = app.master_sheet.get('B9:C18')
 
-    return machines, persons, wages
+    return machines, persons
+
+def create_confirm_message():
+    cache = app.cache_sheet.get('B1:B5')
+
+    starttime = dt.strptime(cache[1][0], '%Y-%m-%dT%H:%M')
+    endtime = dt.strptime(cache[2][0], '%Y-%m-%dT%H:%M')
+    seconds = (endtime - starttime).total_seconds()
+    round_up_minutes = (seconds // 900 + 1) * 900 / 60
+    starttime = starttime.strftime('%Y/%m/%d %H:%M')
+    endtime = endtime.strftime('%Y/%m/%d %H:%M')
+    totaltime = f'{int(round_up_minutes // 60):.0f}時間{int(round_up_minutes % 60):.0f}分'
+    app.cache_sheet.update_acell('B6', round_up_minutes)
+
+    msg = f'''この日報を登録しますか？
+コンバイン：{cache[3][0]}
+作業者：{cache[4][0]}\n
+開始：{starttime}
+終了：{endtime}
+合計時間：{totaltime}\n
+（※合計作業時間は15分単位・15分に満たない場合は切り上げで算出）'''
+
+    return msg
+
 
 def calc_operator_wages():
     this_year = dt.now().year
@@ -19,7 +41,7 @@ def calc_operator_wages():
     records = []
     for record in all_records:
         record_year = dt.strptime(record['starttime'], '%Y-%m-%dT%H:%M').year
-        record['date'] = record['starttime'][5:9].replace('-', '/')
+        record['date'] = record['starttime'][5:10].replace('-', '/')
         record['starttime'] = record['starttime'][-5:]
         del record['endtime']
         if record_year == this_year:
@@ -33,7 +55,6 @@ def calc_operator_wages():
             records_per_day[record_date].append(record)
         else:
             records_per_day[record_date] = [record]
-    
 
     #集計①のテキストを作成
     msg_times_per_day = '今年度分のオペレーター作業履歴です。'
@@ -54,6 +75,6 @@ def calc_operator_wages():
 
     for person in total_time:
         wage = total_time[person] / 60 * 1300
-        msg_total_wages += f'\n{person} : {total_time[person] // 60}h{total_time[person] % 60}m（{wage:.0f}円）'
+        msg_total_wages += f'\n{person} : {total_time[person] // 60}h{total_time[person] % 60}m（{wage:,.0f}円）'
 
     return msg_times_per_day, msg_total_wages
