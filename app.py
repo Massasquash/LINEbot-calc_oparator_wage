@@ -30,7 +30,7 @@ record_sheet = ss.worksheet('record')
 master_sheet = ss.worksheet('master')
 
 # マスター情報の取得
-machines, persons = tools.get_master_data()
+machines, persons, wages = tools.get_master_data()
 
 # TODO:cacheあとで修正
 cache_sheet = ss.worksheet('cache')
@@ -59,14 +59,16 @@ def callback():
 # メッセージ応答メソッド
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    
     if event.message.type == 'text':
         ev_text = event.message.text
         if ev_text == '日報入力':
             actions.send_start_datetime_picker(event)
             return
         if ev_text == '集計':
-            actions.reply_text(event, 'これから作ります')
+
+            #集計結果をmsg_times_per_dayとmsg_total_wagesに入れる
+            msg_times_per_day, msg_total_wages = tools.calc_operator_wages()
+            actions.send_aggregate_button_template(event, msg_times_per_day, msg_total_wages)
         
 #ポストバックアクション応答メソッド
 @handler.add(PostbackEvent)

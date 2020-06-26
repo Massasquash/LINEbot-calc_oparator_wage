@@ -117,3 +117,30 @@ def send_entry_quickreply(event, msg):
         quick_reply_message
     )
     return
+
+
+def send_aggregate_button_template(event, msg1, msg2):
+    message_template = TemplateSendMessage(
+        alt_text="集計",
+        template=ButtonsTemplate(
+            text="選んでください。",
+            title="集計",
+            actions=[
+                MessageAction(
+                    type="message",
+                    label="①確認（日毎に表示）",
+                    text=msg1
+                ),
+                MessageAction(
+                    type="message",
+                    label="②集計（今年度合計）",
+                    text=msg2
+                )
+            ]
+        )
+    )
+    app.line_bot_api.reply_message(
+        event.reply_token,
+        message_template
+    )
+    return
