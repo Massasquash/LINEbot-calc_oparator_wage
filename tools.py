@@ -21,9 +21,10 @@ def get_user_sheet(event):
     )
     return app.ss.worksheet(user_id)
 
-def create_confirm_message():
-    cache = app.cache_sheet.get('B1:B5')
-
+def create_confirm_message(event):
+    user_cache_sheet = get_user_sheet(event)
+    cache = user_cache_sheet.get('B1:B6')
+    
     starttime = dt.strptime(cache[1][0], '%Y-%m-%dT%H:%M')
     endtime = dt.strptime(cache[2][0], '%Y-%m-%dT%H:%M')
     seconds = (endtime - starttime).total_seconds()
@@ -31,7 +32,7 @@ def create_confirm_message():
     starttime = starttime.strftime('%Y/%m/%d %H:%M')
     endtime = endtime.strftime('%Y/%m/%d %H:%M')
     totaltime = f'{int(round_up_minutes // 60):.0f}時間{int(round_up_minutes % 60):.0f}分'
-    app.cache_sheet.update_acell('B6', round_up_minutes)
+    user_cache_sheet.update_acell('B6', round_up_minutes)
 
     msg = f'''この日報を登録しますか？
 コンバイン：{cache[3][0]}
