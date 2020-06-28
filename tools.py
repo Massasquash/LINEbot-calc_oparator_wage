@@ -1,4 +1,5 @@
 from datetime import datetime as dt
+import re
 import app
 import gspread
 
@@ -7,6 +8,18 @@ def get_master_data():
     persons = app.master_sheet.get('B9:C18')
 
     return machines, persons
+
+def get_user_sheet(event):
+    user_id = event.source.user_id
+    sheets_list = app.ss.worksheets()
+    sheets_list = [sheets_list[i].title for i in range(len(sheets_list))]
+    if user_id not in sheets_list:
+        app.ss.duplicate_sheet(
+            source_sheet_id = app.cache_sheet.id,
+            new_sheet_name = user_id,
+            insert_sheet_index = 3
+    )
+    return app.ss.worksheet(user_id)
 
 def create_confirm_message():
     cache = app.cache_sheet.get('B1:B5')
@@ -62,7 +75,7 @@ def calc_operator_wages():
         msg_times_per_day += f'\n\n{date}'
         for record in records_per_day[date]:
             disp_worktime = f"{record['minutes'] // 60}h{record['minutes'] % 60}m"
-            msg_times_per_day += f"\n・{record['machine']} {record['person']}\n\t\t{record['starttime']}開始（{disp_worktime}m稼働）"
+            msg_times_per_day += f"\n・{record['machine'][:2]} {record['person'][:2]} {record['starttime']}〜（{disp_worktime}）"
 
     #集計②のテキストを作成
     total_time = {person[0]:0 for person in app.persons}

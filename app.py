@@ -28,12 +28,10 @@ ss_key = os.environ['SPREADSHEET_KEY']
 ss = gc.open_by_key(ss_key)
 record_sheet = ss.worksheet('record')
 master_sheet = ss.worksheet('master')
+cache_sheet = ss.worksheet('cache')
 
 # マスター情報の取得
 machines, persons = tools.get_master_data()
-
-# TODO:cacheあとで修正
-cache_sheet = ss.worksheet('cache')
 
 # flaskアプリ実装（初期化）
 app = Flask(__name__)
@@ -59,13 +57,16 @@ def callback():
 # メッセージ応答メソッド
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
+    print(tools.get_user_sheet(event))
     if event.message.type == 'text':
         ev_text = event.message.text
         if ev_text == '日報入力':
             actions.send_start_datetime_picker(event)
         if ev_text == '集計':
             msg_times_per_day, msg_total_wages = tools.calc_operator_wages()
-            actions.send_aggregate_button_template(event, msg_times_per_day, msg_total_wages)
+            print(len(msg_times_per_day))
+            print(len(msg_total_wages))
+            actions.reply_two_texts(event, msg_times_per_day, msg_total_wages)
 
 #ポストバックアクション応答メソッド
 @handler.add(PostbackEvent)
