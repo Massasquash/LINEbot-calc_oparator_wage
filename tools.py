@@ -1,25 +1,33 @@
 from datetime import datetime as dt
-import re
-import app
-import gspread
+import os, gspread
+import api_settings
 
-def get_master_data():
-    machines = app.master_sheet.get('B2:B6')
-    persons = app.master_sheet.get('B9:C18')
 
-    return machines, persons
+# Spreadsheet連携
+credentials = api_settings.set_google_credentials()
+gc = gspread.authorize(credentials)
+ss_key = os.environ['SPREADSHEET_KEY']
+
+ss = gc.open_by_key(ss_key)
+record_sheet = ss.worksheet('record')
+master_sheet = ss.worksheet('master')
+cache_sheet = ss.worksheet('cache')
+
+# マスター情報の取得
+machines = master_sheet.get('B2:B6')
+persons = master_sheet.get('B9:C18')
 
 def get_user_sheet(event):
     user_id = event.source.user_id
-    sheets_list = app.ss.worksheets()
+    sheets_list = ss.worksheets()
     sheets_list = [sheets_list[i].title for i in range(len(sheets_list))]
     if user_id not in sheets_list:
-        app.ss.duplicate_sheet(
-            source_sheet_id = app.cache_sheet.id,
+        ss.duplicate_sheet(
+            source_sheet_id = cache_sheet.id,
             new_sheet_name = user_id,
             insert_sheet_index = 3
     )
-    return app.ss.worksheet(user_id)
+    return ss.worksheet(user_id)
 
 def create_confirm_message(event):
     user_cache_sheet = get_user_sheet(event)
@@ -44,10 +52,13 @@ def create_confirm_message(event):
 
     return msg
 
+def save_records(user_cache_sheet):
+    cache = user_cache_sheet.get('B1:B5')
+    record_sheet.append_row([cache[0][0], cache[1][0], cache[2][0], cache[3][0], cache[4][0]])
 
 def calc_operator_wages():
     this_year = dt.now().year
-    all_records = app.record_sheet.get_all_records()
+    all_records = record_sheet.get_all_records()
 
     #レコードの内容を表示用に整形する
     records = [] #辞書型のリスト
@@ -77,8 +88,8 @@ def calc_operator_wages():
             msg_times_per_day += f"\n・{record['machine'][:2]} {record['person'][:2]} {record['starttime']}〜（{disp_worktime}）"
 
     #集計②のテキストを作成
-    total_time = {person[0]:0 for person in app.persons}
-    for person in app.persons:
+    total_time = {person[0]:0 for person in persons}
+    for person in persons:
         for record in records:
             if record['person'] == person[0]:
                 total_time[person[0]] += int(record['minutes'])

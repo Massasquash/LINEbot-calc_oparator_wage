@@ -13,25 +13,12 @@ from linebot.models import (
 )
 from linebot.exceptions import InvalidSignatureError
 
-import api_settings, tools, actions
+import tools, actions
 
 #LINE botの設定
 #TODO:本番環境への移行時はDEVのついていない環境変数を使用する
 line_bot_api = LineBotApi(os.environ["DEV_LINE_CHANNEL_ACCESS_TOKEN"])
 handler = WebhookHandler(os.environ["DEV_LINE_CHANNEL_SECRET"])
-
-# Spreadsheet連携
-credentials = api_settings.set_google_credentials()
-gc = gspread.authorize(credentials)
-ss_key = os.environ['SPREADSHEET_KEY']
-
-ss = gc.open_by_key(ss_key)
-record_sheet = ss.worksheet('record')
-master_sheet = ss.worksheet('master')
-cache_sheet = ss.worksheet('cache')
-
-# マスター情報の取得
-machines, persons = tools.get_master_data()
 
 # flaskアプリ実装（初期化）
 app = Flask(__name__)
@@ -63,8 +50,6 @@ def handle_message(event):
             actions.send_start_datetime_picker(event)
         if ev_text == '集計':
             msg_times_per_day, msg_total_wages = tools.calc_operator_wages()
-            print(len(msg_times_per_day))
-            print(len(msg_total_wages))
             actions.reply_two_texts(event, msg_times_per_day, msg_total_wages)
 
 #ポストバックアクション応答メソッド
@@ -85,12 +70,12 @@ def handle_postback(event):
             actions.reply_text(event, 'もう一度、終了時間を入力してください\n（終了時間は開始時間より後に設定してください）')
             return
         user_cache_sheet.update_acell('B2', endtime)
-        actions.send_machines_quickreply(event, machines)
+        actions.send_machines_quickreply(event, tools.machines)
 
     if ev_data.startswith('machine'):
         machine = ev_data.split("'")[1]
         user_cache_sheet.update_acell('B3', machine)
-        actions.send_persons_quickreply(event, persons)
+        actions.send_persons_quickreply(event, tools.persons)
     
     if ev_data.startswith('person'):
         person = ev_data.split("'")[1]
@@ -100,7 +85,7 @@ def handle_postback(event):
 
     if ev_data.startswith('entry'):
         if ev_data[-1] == '0':
-            record_sheet.append_row([cache[0][0], cache[1][0], cache[2][0], cache[3][0], cache[4][0]])
+            tools.save_records(user_cache_sheet)
             msg = '日報を登録しました！'
             actions.reply_text(event, msg)
         elif ev_data[-1] == '1':
