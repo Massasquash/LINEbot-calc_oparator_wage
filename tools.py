@@ -23,20 +23,20 @@ def get_user_sheet(event):
 
 def create_confirm_message(event):
     user_cache_sheet = get_user_sheet(event)
-    cache = user_cache_sheet.get('B1:B6')
-    
-    starttime = dt.strptime(cache[1][0], '%Y-%m-%dT%H:%M')
-    endtime = dt.strptime(cache[2][0], '%Y-%m-%dT%H:%M')
+    cache = user_cache_sheet.get('B1:B5')
+
+    starttime = dt.strptime(cache[0][0], '%Y-%m-%dT%H:%M')
+    endtime = dt.strptime(cache[1][0], '%Y-%m-%dT%H:%M')
     seconds = (endtime - starttime).total_seconds()
     round_up_minutes = (seconds // 900 + 1) * 900 / 60
     starttime = starttime.strftime('%Y/%m/%d %H:%M')
     endtime = endtime.strftime('%Y/%m/%d %H:%M')
     totaltime = f'{int(round_up_minutes // 60):.0f}時間{int(round_up_minutes % 60):.0f}分'
-    user_cache_sheet.update_acell('B6', round_up_minutes)
+    user_cache_sheet.update_acell('B5', round_up_minutes)
 
     msg = f'''この日報を登録しますか？
-コンバイン：{cache[3][0]}
-作業者：{cache[4][0]}\n
+コンバイン：{cache[2][0]}
+作業者：{cache[3][0]}\n
 開始：{starttime}
 終了：{endtime}
 合計時間：{totaltime}\n
@@ -49,10 +49,8 @@ def calc_operator_wages():
     this_year = dt.now().year
     all_records = app.record_sheet.get_all_records()
 
-    #レコードの内容を表示用に整形する。
-    #records:辞書型のリスト
-    #ecords_per_day:dateをキーとした辞書型のリスト
-    records = []
+    #レコードの内容を表示用に整形する
+    records = [] #辞書型のリスト
     for record in all_records:
         record_year = dt.strptime(record['starttime'], '%Y-%m-%dT%H:%M').year
         record['date'] = record['starttime'][5:10].replace('-', '/')
@@ -61,7 +59,7 @@ def calc_operator_wages():
         if record_year == this_year:
             records.append(record)
 
-    records_per_day = {}
+    records_per_day = {} #dateをキーとした辞書型のリスト
     for record in records:
         record_date = record['date']
         del record['date']
