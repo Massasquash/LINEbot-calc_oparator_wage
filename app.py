@@ -49,6 +49,7 @@ def handle_postback(event):
     ev_data = event.postback.data
     user_cache_sheet = tools.get_user_sheet(event)
     cache = user_cache_sheet.get('B1:B5')
+    print(event)
     if ev_data == 'starttime': 
         starttime = event.postback.params['datetime']
         user_cache_sheet.update_acell('B1', starttime)
