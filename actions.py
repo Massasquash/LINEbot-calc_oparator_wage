@@ -1,29 +1,27 @@
 import os
 
-from linebot import LineBotApi, WebhookHandler
 from linebot.models import (
+    TextSendMessage,
     TemplateSendMessage, ButtonsTemplate,
-    PostbackAction, MessageAction,
     DatetimePickerAction, QuickReply, QuickReplyButton,
-    MessageEvent, PostbackEvent,
-    TextMessage, TextSendMessage,
+    MessageAction, PostbackAction
 )
 
-import app
+import api_settings
 
 def reply_text(event, msg):
-    app.line_bot_api.reply_message(
+    api_settings.line_bot_api.reply_message(
         event.reply_token,
         TextSendMessage(text=msg)
     )
 
-def reply_two_texts(event, msg1, msg2):
-    app.line_bot_api.reply_message(
-        event.reply_token, [
-            TextSendMessage(text=msg1),
-            TextSendMessage(text=msg2)
-        ]
-    )
+# def reply_two_texts(event, msg1, msg2):
+#     api_settings.line_bot_api.reply_message(
+#         event.reply_token, [
+#             TextSendMessage(text=msg1),
+#             TextSendMessage(text=msg2)
+#         ]
+#     )
 
 def send_start_datetime_picker(event):
     datetime_picker = TemplateSendMessage(
@@ -40,7 +38,7 @@ def send_start_datetime_picker(event):
             ]
         )
     )
-    app.line_bot_api.reply_message(
+    api_settings.line_bot_api.reply_message(
         event.reply_token,
         datetime_picker
     )
@@ -61,7 +59,7 @@ def send_end_datetime_picker(event):
             ]
         )
     )
-    app.line_bot_api.reply_message(
+    api_settings.line_bot_api.reply_message(
         event.reply_token,
         datetime_picker
     )
@@ -80,7 +78,7 @@ def send_machines_quickreply(event, obj):
             items = map(make_quickreply_item, obj)
         )
     )
-    app.line_bot_api.reply_message(
+    api_settings.line_bot_api.reply_message(
         event.reply_token,
         quick_reply_message
     )
@@ -97,7 +95,7 @@ def send_persons_quickreply(event, obj):
         text = '作業者を選択',
         quick_reply = QuickReply(items = map(make_quickreply_item, obj))
     )
-    app.line_bot_api.reply_message(
+    api_settings.line_bot_api.reply_message(
         event.reply_token,
         quick_reply_message
     )
@@ -117,7 +115,7 @@ def send_entry_quickreply(event, msg):
         text = msg,
         quick_reply = QuickReply(items = items)
     )
-    app.line_bot_api.reply_message(
+    api_settings.line_bot_api.reply_message(
         event.reply_token,
         quick_reply_message
     )
@@ -143,7 +141,7 @@ def send_entry_quickreply(event, msg):
 #             ]
 #         )
 #     )
-#     app.line_bot_api.reply_message(
+#     api_settings.line_bot_api.reply_message(
 #         event.reply_token,
 #         message_template
 #     )

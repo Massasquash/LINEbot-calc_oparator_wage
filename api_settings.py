@@ -1,6 +1,8 @@
 import os
 from oauth2client.service_account import ServiceAccountCredentials
 
+from linebot import LineBotApi, WebhookHandler
+
 # Google Drive APIの認証を実行
 def set_google_credentials():
   scope = ['https://spreadsheets.google.com/feeds','https://www.googleapis.com/auth/drive']
@@ -19,3 +21,9 @@ def set_google_credentials():
 
   credentials = ServiceAccountCredentials.from_json_keyfile_dict(credential_dict, scope)
   return credentials
+
+
+# LINE messaging APIの設定
+#TODO:本番環境への移行時はDEVのついていない環境変数を使用する
+line_bot_api = LineBotApi(os.environ["LINE_CHANNEL_ACCESS_TOKEN"])
+handler = WebhookHandler(os.environ["LINE_CHANNEL_SECRET"])

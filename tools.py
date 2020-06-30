@@ -56,6 +56,9 @@ def save_records(user_cache_sheet):
     cache = user_cache_sheet.get('B1:B5')
     record_sheet.append_row([cache[0][0], cache[1][0], cache[2][0], cache[3][0], cache[4][0]])
 
+
+
+
 def calc_operator_wages():
     this_year = dt.now().year
     all_records = record_sheet.get_all_records()
@@ -79,15 +82,15 @@ def calc_operator_wages():
         else:
             records_per_day[record_date] = [record]
 
-    #集計①のテキストを作成
+    #①確認のテキストを作成
     msg_times_per_day = '今年度分のオペレーター作業履歴です。'
-    for date in records_per_day:
+    for date in records_per_day.keys():
         msg_times_per_day += f'\n\n{date}'
         for record in records_per_day[date]:
             disp_worktime = f"{record['minutes'] // 60}h{record['minutes'] % 60}m"
             msg_times_per_day += f"\n・{record['machine'][:2]} {record['person'][:2]} {record['starttime']}〜（{disp_worktime}）"
 
-    #集計②のテキストを作成
+    #②集計のテキストを作成
     total_time = {person[0]:0 for person in persons}
     for person in persons:
         for record in records:

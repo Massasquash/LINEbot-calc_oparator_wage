@@ -1,24 +1,12 @@
 from flask import Flask, request, abort
-import os
 from datetime import datetime as dt
+import os
 import gspread
 
-from linebot import LineBotApi, WebhookHandler
-from linebot.models import (
-    TemplateSendMessage, ButtonsTemplate,
-    PostbackAction, MessageAction,
-    DatetimePickerAction, QuickReply, QuickReplyButton,
-    MessageEvent, PostbackEvent,
-    TextMessage, TextSendMessage,
-)
+from linebot.models import MessageEvent, TextMessage, PostbackEvent
 from linebot.exceptions import InvalidSignatureError
 
-import tools, actions
-
-#LINE botの設定
-#TODO:本番環境への移行時はDEVのついていない環境変数を使用する
-line_bot_api = LineBotApi(os.environ["DEV_LINE_CHANNEL_ACCESS_TOKEN"])
-handler = WebhookHandler(os.environ["DEV_LINE_CHANNEL_SECRET"])
+import api_settings, tools, actions
 
 # flaskアプリ実装（初期化）
 app = Flask(__name__)
@@ -35,25 +23,28 @@ def callback():
     app.logger.info('Request body: ' + body)
 
     try:
-        handler.handle(body, signature)
+        api_settings.handler.handle(body, signature)
     except InvalidSignatureError:
         abort(400)
 
     return 'OK'
 
 # メッセージ応答メソッド
-@handler.add(MessageEvent, message=TextMessage)
+@api_settings.handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     if event.message.type == 'text':
         ev_text = event.message.text
         if ev_text == '日報入力':
             actions.send_start_datetime_picker(event)
-        if ev_text == '集計':
+        elif ev_text == '確認':
             msg_times_per_day, msg_total_wages = tools.calc_operator_wages()
-            actions.reply_two_texts(event, msg_times_per_day, msg_total_wages)
+            actions.reply_text(event, msg_times_per_day)
+        elif ev_text == '集計':
+            msg_times_per_day, msg_total_wages = tools.calc_operator_wages()
+            actions.reply_text(event, msg_total_wages)
 
 #ポストバックアクション応答メソッド
-@handler.add(PostbackEvent)
+@api_settings.handler.add(PostbackEvent)
 def handle_postback(event):
     ev_data = event.postback.data
     user_cache_sheet = tools.get_user_sheet(event)
